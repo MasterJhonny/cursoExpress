@@ -1,4 +1,6 @@
 const faker = require('faker');
+const boom = require('@hapi/boom');
+
 class ProductsService {
   constructor(){
     this.products = new Array();
@@ -12,13 +14,14 @@ class ProductsService {
           id: faker.datatype.uuid(),
           name: faker.commerce.productName(),
           price: parseInt(faker.commerce.price()),
-          image: faker.image.imageUrl()
+          image: faker.image.imageUrl(),
+          isBlocked: faker.datatype.boolean()
         }
       )
     }
   }
 
-  create (data){
+  async create (data){
     const newProduct = {
       id: faker.datatype.uuid(),
       ...data
@@ -28,16 +31,25 @@ class ProductsService {
   }
 
   find(){
-    return this.products;
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(this.products);
+      }, 100)
+    })
   }
 
-  findOne(id) {
-    return this.products.find(item => item.id === id);
+  async findOne(id) {
+    const product = this.products.find(item => item.id === id);
+    if (!product) throw boom.notFound('Product, Not Found');
+    if(product.isBlocked) {
+      throw boom.conflict('Product, id Blocked');
+    }
+    return product;
   }
 
-  update(id, changes) {
+  async update(id, changes) {
     const index = this.products.findIndex(item => item.id === id);
-    if(index === -1) throw new Error("Ups, Product not found");
+    if(index === -1) throw boom.notFound('Products, Not Found');
     const updateProduct = {
       ...this.products[index],
       ...changes
@@ -46,9 +58,9 @@ class ProductsService {
     return updateProduct;
   }
 
-  delete(id) {
+  async delete(id) {
     const index = this.products.findIndex(item => item.id === id);
-    if(index === -1) throw new Error("Ups, Product not found");
+    if(index === -1) throw boom.notFound('Products, Not Found');
     this.products.splice(index, 1);
     return {
       delete: true

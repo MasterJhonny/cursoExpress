@@ -1,4 +1,5 @@
 const faker = require('faker');
+const boom = require('@hapi/boom');
 
 class UsersService {
   constructor(){
@@ -11,7 +12,7 @@ class UsersService {
       this.users.push(
         {
           id: faker.datatype.uuid(),
-          nombre: faker.name.firstName(),
+          name: faker.name.firstName(),
           address: faker.address.cityName(),
           avatar: faker.image.avatar()
         }
@@ -19,7 +20,7 @@ class UsersService {
     }
   }
 
-  create (data) {
+  async create (data) {
     const newUser = {
       id: faker.datatype.uuid(),
       ...data
@@ -29,17 +30,21 @@ class UsersService {
   }
 
   find(){
-    return this.users;
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(this.users)
+      }, 100)
+    })
   }
 
-  findOne(id){
+  async findOne(id){
     return this.users.find(item => item.id === id);
   }
 
-  update(id, changes) {
+  async update(id, changes) {
     const index = this.users.findIndex(item => item.id === id);
     console.log(this.users[index]);
-    if(index === -1) throw new Error('Ups, Not Found');
+    if(index === -1) throw boom.notFound('No Found!');
     const updateUser = {
       ...this.users[index],
       ...changes
@@ -48,9 +53,9 @@ class UsersService {
     return updateUser;
   }
 
-  delete(id){
+  async delete(id){
     const index = this.users.findIndex(item => item.id === id);
-    if(index === -1) throw new Error('Ups, Not Found');
+    if(index === -1) throw boom.notFound('No Found!');
     this.users.splice(index, 1);
     return {
       delete: true
